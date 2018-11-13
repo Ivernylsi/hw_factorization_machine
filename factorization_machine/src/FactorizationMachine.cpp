@@ -1,5 +1,6 @@
 #include "factorization_machine/FactorizationMachine.hpp"
 #include <vector>
+#include <iostream>
 
 FactorizationMachine::FactorizationMachine(int n, int k) : n(n), k(k) {
   v = Eigen::MatrixXd(n, k);
@@ -16,14 +17,25 @@ void FactorizationMachine::train(const Eigen::SparseMatrix<double> data,
   for (int i = 0; i < max_iteration; ++i) {
     Eigen::VectorXd y_pred = predict(data);
     Eigen::VectorXd diff_y = (y_pred - y) / y.rows();
+    printf("diff is %f\n", diff_y.sum());
     w0 += diff_y.sum() * train_rate;
-    for (int k = 0; k < data.rows(); ++k) {
+    for (int j = 0; j < data.rows(); ++j) {
       Eigen::VectorXd temp = data.row(k);
       w = w.array() - temp.array() * diff_y.array() / y.rows() * train_rate;
+    }
+      
+    for(int f = 0; f < k; ++f) {
+      auto a1 = (data * v.col(f)) * data / y.rows();
+      auto a2 = data* v.col(f).transpose() / y.rows();
+      auto a_d = a1-a2;
+      v.col(f) = v.col(f) - a_d * train_rate;
     }
 
     printf("iteration N %i \n", i);
   }
+  std::cout<< "RMSE : " << RMSE(data, y)<<std::endl;;
+  std::cout<< "R2 : " << R2(data, y)<<std::endl;;
+
 }
 
 double FactorizationMachine::gradientW0() { return 1; }

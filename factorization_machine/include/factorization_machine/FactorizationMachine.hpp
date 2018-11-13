@@ -5,11 +5,10 @@
 
 class FactorizationMachine {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   FactorizationMachine(int n, int k = 2);
 
-
-  void train(const Eigen::SparseMatrix<double> data,
-             const Eigen::VectorXd &y);
+  void train(const Eigen::SparseMatrix<double> data, const Eigen::VectorXd &y);
 
 private:
   auto commonCompute(const Eigen::SparseMatrix<double> data, int Idx) -> auto {
@@ -19,9 +18,11 @@ private:
     return commonCompute(data, Idx).array().abs2();
   }
   auto second_part(const Eigen::SparseMatrix<double> data) -> auto {
-    Eigen::VectorXd ans = commonCompute(data, 0).array().abs2() - commonSquared(data, 0);
+    Eigen::VectorXd ans =
+        commonCompute(data, 0).array().abs2() - commonSquared(data, 0);
     for (int i = 1; i < k; ++i)
-      ans = ans.array() + commonCompute(data, 0).array().abs2() - commonSquared(data, 0);
+      ans = ans.array() + commonCompute(data, 0).array().abs2() -
+            commonSquared(data, 0);
     return ans;
   }
 
@@ -39,12 +40,12 @@ private:
   Eigen::VectorXd w;
   double w0;
   int n, k;
+
 public:
   auto predict(const Eigen::SparseMatrix<double> data) -> auto {
     assert(data.cols() == n);
     return w0 + (data * w).array() + second_part(data).sum();
   }
-
 };
 
 #endif // FACTORIZATIONMACHINE_HPP
