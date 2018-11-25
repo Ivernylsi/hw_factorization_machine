@@ -2,6 +2,7 @@
 #define FACTORIZATIONMACHINE_HPP
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
+#include <iostream>
 
 class FactorizationMachine {
 public:
@@ -11,18 +12,25 @@ public:
   void train(const Eigen::SparseMatrix<double> data, const Eigen::VectorXd &y);
 
 private:
-  auto commonCompute(const Eigen::SparseMatrix<double> data, int Idx) -> auto {
-    return data * v.col(Idx);
+  auto commonCompute(const Eigen::SparseMatrix<double> data) -> void {
+    common = data * v;
   }
-  auto commonSquared(const Eigen::SparseMatrix<double> data, int Idx) -> auto {
-    return commonCompute(data, Idx).array().abs2();
+
+  auto commonSquared(const Eigen::SparseMatrix<double> data) -> auto {
+    Eigen::MatrixXd v2 = v.array().abs2();
+    return data * v2;
   }
-  auto second_part(const Eigen::SparseMatrix<double> data) -> auto {
-    Eigen::VectorXd ans =
-        commonCompute(data, 0).array().abs2() - commonSquared(data, 0);
-    for (int i = 1; i < k; ++i)
-      ans = ans.array() + commonCompute(data, 0).array().abs2() -
-            commonSquared(data, 0);
+
+  auto second_part(const Eigen::SparseMatrix<double> data) -> Eigen::VectorXd {
+    commonCompute(data);
+
+    Eigen::MatrixXd comSq = commonSquared(data);
+
+    Eigen::MatrixXd temp = common.array().abs2() - comSq.array();
+    
+    Eigen::VectorXd one(k); 
+    one.setOnes();
+    auto ans = temp * one;
     return ans;
   }
 
@@ -40,11 +48,13 @@ private:
   Eigen::VectorXd w;
   double w0;
   int n, k;
+  Eigen::MatrixXd common;
 
 public:
-  auto predict(const Eigen::SparseMatrix<double> data) -> auto {
+  auto predict(const Eigen::SparseMatrix<double> data) -> Eigen::VectorXd {
     assert(data.cols() == n);
-    return w0 + (data * w).array() + second_part(data).sum();
+    auto s_part = second_part(data).array() / 2;
+    return w0 + (data * w).array() + s_part;
   }
 };
 
