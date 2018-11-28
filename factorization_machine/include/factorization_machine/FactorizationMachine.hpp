@@ -10,7 +10,12 @@ public:
   FactorizationMachine(int n, int k = 2);
 
   void train(const Eigen::SparseMatrix<double> data, const Eigen::VectorXd &y);
+  double RMSE(const Eigen::VectorXd &y_pred, const Eigen::VectorXd &y);
 
+  double R2(const Eigen::VectorXd &y_pred, const Eigen::VectorXd &y);
+
+  int getN() const { return n; }
+  int getK() const { return k; }
 private:
   auto commonCompute(const Eigen::SparseMatrix<double> data) -> void {
     common = data * v;
@@ -27,22 +32,12 @@ private:
     Eigen::MatrixXd comSq = commonSquared(data);
 
     Eigen::MatrixXd temp = common.array().abs2() - comSq.array();
-    
-    Eigen::VectorXd one(k); 
+
+    Eigen::VectorXd one(k);
     one.setOnes();
     auto ans = temp * one;
     return ans;
   }
-
-  double RMSE(const Eigen::VectorXd &y_pred, const Eigen::VectorXd &y);
-
-  double R2(const Eigen::VectorXd &y_pred, const Eigen::VectorXd &y);
-
-  // Gradient block
-  double gradientW0();
-  Eigen::VectorXd gradientW(const Eigen::VectorXd &x);
-  Eigen::MatrixXd gradientV(const Eigen::VectorXd &x,
-                            const Eigen::VectorXd &comSq);
 
   Eigen::MatrixXd v;
   Eigen::VectorXd w;

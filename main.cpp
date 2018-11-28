@@ -5,24 +5,23 @@
 
 int main() {
 
-  Eigen::MatrixXd a(5, 4);
+  Eigen::MatrixXd a = Eigen::MatrixXd::Random(90, 20);
+  
+  int r = 90;
+  int c = 20;
 
-  a << 5, 4, 1, 1, -1, 3, -1, 1, -1, 1, -1, -1, -1, -1, 5, 1, 1, 5, 4, 4;
-  a  =  a * 10;
-  Eigen::SparseMatrix<double> mt(13, 5 + 4);
-  Eigen::VectorXd y(13);
+  Eigen::SparseMatrix<double> mt(r*c, r+c);
+  Eigen::VectorXd y(r*c);
   mt.setZero();
   int counter = 0;
-  for (int i = 0; i < 4; ++i)
-    for (int j = 0; j < 5; ++j) {
-      if (a(j,i) != -10 ) {
+  for (int i = 0; i < c; ++i)
+    for (int j = 0; j < r; ++j) {
         mt.coeffRef(counter, j) = 1;
-        mt.coeffRef(counter, 5 + i) = 1;
+        mt.coeffRef(counter, r + i) = 1;
         y(counter++) = a(j, i);
-      }
     }
 
-  FactorizationMachine f(mt.cols(), 4);
+  FactorizationMachine f(mt.cols());
   f.train(mt, y);
 
   return 0;
