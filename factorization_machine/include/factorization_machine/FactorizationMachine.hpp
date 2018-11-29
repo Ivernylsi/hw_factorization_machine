@@ -9,47 +9,46 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   FactorizationMachine(int n, int k = 2);
 
-  void train(const Eigen::SparseMatrix<double> data, const Eigen::VectorXd &y);
-  double RMSE(const Eigen::VectorXd &y_pred, const Eigen::VectorXd &y);
-
-  double R2(const Eigen::VectorXd &y_pred, const Eigen::VectorXd &y);
+  void train(const Eigen::SparseMatrix<int8_t> data, const Eigen::VectorXf &y,
+             const int max_iteration = 1e+4);
+  float RMSE(const Eigen::VectorXf &y_pred, const Eigen::VectorXf &y);
 
   int getN() const { return n; }
   int getK() const { return k; }
+
 private:
-  auto commonCompute(const Eigen::SparseMatrix<double> data) -> void {
-    common = data * v;
+  auto commonCompute(const Eigen::SparseMatrix<int8_t> data) -> void {
+    common = data.cast<float>() * v;
   }
 
-  auto commonSquared(const Eigen::SparseMatrix<double> data) -> auto {
-    Eigen::MatrixXd v2 = v.array().abs2();
-    return data * v2;
+  auto commonSquared(const Eigen::SparseMatrix<int8_t> data) -> auto {
+    Eigen::MatrixXf v2 = v.array().abs2();
+    return data.cast<float>() * v2;
   }
 
-  auto second_part(const Eigen::SparseMatrix<double> data) -> Eigen::VectorXd {
+  auto second_part(const Eigen::SparseMatrix<int8_t> data) -> Eigen::VectorXf {
     commonCompute(data);
 
-    Eigen::MatrixXd comSq = commonSquared(data);
+    Eigen::MatrixXf comSq = commonSquared(data);
+    Eigen::MatrixXf temp = common.array().abs2() - comSq.array();
 
-    Eigen::MatrixXd temp = common.array().abs2() - comSq.array();
-
-    Eigen::VectorXd one(k);
+    Eigen::VectorXf one(k);
     one.setOnes();
     auto ans = temp * one;
     return ans;
   }
 
-  Eigen::MatrixXd v;
-  Eigen::VectorXd w;
-  double w0;
+  Eigen::MatrixXf v;
+  Eigen::VectorXf w;
+  float w0;
   int n, k;
-  Eigen::MatrixXd common;
+  Eigen::MatrixXf common;
 
 public:
-  auto predict(const Eigen::SparseMatrix<double> data) -> Eigen::VectorXd {
+  auto predict(const Eigen::SparseMatrix<int8_t> data) -> Eigen::VectorXf {
     assert(data.cols() == n);
     auto s_part = second_part(data).array() / 2;
-    return w0 + (data * w).array() + s_part;
+    return w0 + (data.cast<float>() * w).array() + s_part;
   }
 };
 

@@ -2,27 +2,34 @@
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
 #include <iostream>
+#include <chrono>
 
 int main() {
 
-  Eigen::MatrixXd a = Eigen::MatrixXd::Random(90, 20);
+  Eigen::MatrixXf a = Eigen::MatrixXf::Random(1000, 100);
   
-  int r = 90;
-  int c = 20;
+  int r = (int)a.rows();
+  int c = (int)a.cols();;
 
-  Eigen::SparseMatrix<double> mt(r*c, r+c);
-  Eigen::VectorXd y(r*c);
-  mt.setZero();
+  Eigen::SparseMatrix<int8_t> mt(r*c, r+c);
+  Eigen::VectorXf y(r*c);
   int counter = 0;
-  for (int i = 0; i < c; ++i)
-    for (int j = 0; j < r; ++j) {
-        mt.coeffRef(counter, j) = 1;
-        mt.coeffRef(counter, r + i) = 1;
-        y(counter++) = a(j, i);
+  for (int i = 0; i < r; ++i){
+    for (int j = 0; j < c; ++j) {
+        mt.insert(counter, i) = 1;
+        mt.insert(counter, r + j) = 1;
+        y(counter++) = a(i, j);
     }
-
+  }
+  printf("cols : %ld, rows : %ld\n", mt.cols(), mt.rows());
   FactorizationMachine f(mt.cols());
-  f.train(mt, y);
 
+  auto start = std::chrono::high_resolution_clock::now();
+  std::cout << "training started" << std::endl;
+  f.train(mt, y, 1);
+  auto stop = std::chrono::high_resolution_clock::now();
+  
+  float time = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+  std::cout << " Time = "<< time <<std::endl;
   return 0;
 }

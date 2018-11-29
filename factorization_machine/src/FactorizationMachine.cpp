@@ -1,72 +1,69 @@
 #include "factorization_machine/FactorizationMachine.hpp"
+#include <chrono>
 #include <iostream>
 #include <vector>
 
 FactorizationMachine::FactorizationMachine(int n, int k) : n(n), k(k) {
-  v = Eigen::MatrixXd::Random(n, k) / 100;
-  w = Eigen::VectorXd::Random(n);
+  v = Eigen::MatrixXf::Random(n, k) / 100;
+  w = Eigen::VectorXf::Random(n);
   w0 = 0;
 }
 
-void FactorizationMachine::train(const Eigen::SparseMatrix<double> data,
-                                 const Eigen::VectorXd &y) {
+void FactorizationMachine::train(const Eigen::SparseMatrix<int8_t> data,
+                                 const Eigen::VectorXf &y,
+                                 const int max_iteration) {
 
-  common = Eigen::MatrixXd::Zero(data.rows(), k);
+  common.resize(data.rows(), k);
 
-  int max_iteration = 1e+4;
-  double train_rate = 0.1;
-  double v_train = 0.1;
+  float train_rate = 0.1;
+  float v_train = 0.1;
+  Eigen::VectorXf y_pred = predict(data);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
   for (int i = 0; i < max_iteration; ++i) {
-    Eigen::VectorXd y_pred = predict(data);
-    Eigen::VectorXd diff_y = (y_pred - y);
+    Eigen::VectorXf diff_y = (y_pred - y);
     //    printf("diff is %f\n", diff_y.array().abs().sum());
 
     w0 -= diff_y.mean() * train_rate;
 
-    auto t = diff_y.transpose() * data / y.rows();
+    auto t = diff_y.transpose() * data.cast<float>() / y.rows();
 
     w -= train_rate * t.transpose();
 
     for (int f = 0; f < k; ++f) {
-      Eigen::VectorXd a1 = common.col(f).transpose() * data / y.rows();
-      Eigen::VectorXd a2 = Eigen::VectorXd::Zero(n);
+      Eigen::VectorXf a1 =
+          common.col(f).transpose() * data.cast<float>() / y.rows();
 
-      // i coulndt avoid this cycle
-      for (int jj = 0; jj < data.rows(); ++jj) {
-        Eigen::VectorXd temp = data.row(jj).transpose();
+      auto Vf = (data.cast<float>() * v.col(f).asDiagonal()).transpose();
 
-        Eigen::VectorXd temp1 = (temp.array() * v.col(f).array());
-
-        a2 += temp1 / y.rows();
-      }
-      auto a_d = a1 - a2;
-      v.col(f) -= a_d * v_train;
+      Eigen::VectorXf a2 = Vf * Eigen::VectorXf::Ones(1, Vf.cols());
+      v.col(f) -= (a1 - a2) * v_train;
     }
-    if (i % 3000 == 0)
+
+    if (i % 1000 == 0)
       v_train /= 10;
 
-    if (i % 10 == 0) {
+    if (i % 1 == 0) {
       printf("iteration N %i \n", i);
-      printf("diff is %f\n", diff_y.array().abs().sum());
+      printf("diff is %f\n", diff_y.array().abs().mean());
     }
-  }
-  Eigen::VectorXd y_pred = predict(data);
-  std::cout << "RMSE : " << RMSE(y_pred, y) << std::endl;
 
-  std::cout << "R2 : " << R2(y_pred, y) << std::endl;
+    y_pred = predict(data);
+  }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+  
+  float time = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+  std::cout << "Elapsed Time = "<< time <<std::endl;
+
+  std::cout << "RMSE : " << RMSE(y_pred, y) << std::endl;
 }
 
-double FactorizationMachine::RMSE(const Eigen::VectorXd &y_pred,
-                                  const Eigen::VectorXd &y) {
+float FactorizationMachine::RMSE(const Eigen::VectorXf &y_pred,
+                                 const Eigen::VectorXf &y) {
 
   auto diff = (y - y_pred).array().abs2();
   return sqrt(diff.sum() / y.rows());
 }
 
-double FactorizationMachine::R2(const Eigen::VectorXd &y_pred,
-                                const Eigen::VectorXd &y) {
-  double coeff = ((y.array() - y_pred.array()).abs2().sum() /
-                  (y.array() - y.mean()).abs2().sum());
-
-  return (1 - coeff);
-}

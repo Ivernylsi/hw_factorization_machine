@@ -14,8 +14,8 @@ PYBIND11_MODULE(py_fm, m) {
   py::class_<FactorizationMachine>(m, "Fmachine")
       .def(py::init<int, int>())
       .def("train", &FactorizationMachine::train)
+      .def("predict", &FactorizationMachine::predict)
       .def("RMSE", &FactorizationMachine::RMSE)
-      .def("R2", &FactorizationMachine::R2)
       .def("__repr__", [](const FactorizationMachine &f) {
         std::string repr = "<class FactorizationMachine "
                            "n = " +
