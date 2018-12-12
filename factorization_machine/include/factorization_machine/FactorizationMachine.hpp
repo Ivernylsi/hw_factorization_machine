@@ -9,7 +9,12 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   FactorizationMachine(int n, int k = 2);
 
-  void train(const Eigen::SparseMatrix<int8_t> data, const Eigen::VectorXf &y,
+  void train_py(Eigen::SparseMatrix<double> data, const Eigen::VectorXd &y,
+             const int max_iteration = 1e+4) {
+    train(data.cast<int8_t>(), y.cast<float>(), max_iteration); 
+  }
+
+  float train(const Eigen::SparseMatrix<int8_t> &data, const Eigen::VectorXf &y,
              const int max_iteration = 1e+4);
   float RMSE(const Eigen::VectorXf &y_pred, const Eigen::VectorXf &y);
 
@@ -17,16 +22,16 @@ public:
   int getK() const { return k; }
 
 private:
-  auto commonCompute(const Eigen::SparseMatrix<int8_t> data) -> void {
+  auto commonCompute(const Eigen::SparseMatrix<int8_t> &data) -> void {
     common = data.cast<float>() * v;
   }
 
-  auto commonSquared(const Eigen::SparseMatrix<int8_t> data) -> auto {
+  auto commonSquared(const Eigen::SparseMatrix<int8_t> &data) -> auto {
     Eigen::MatrixXf v2 = v.array().abs2();
     return data.cast<float>() * v2;
   }
 
-  auto second_part(const Eigen::SparseMatrix<int8_t> data) -> Eigen::VectorXf {
+  auto second_part(const Eigen::SparseMatrix<int8_t> &data) -> Eigen::VectorXf {
     commonCompute(data);
 
     Eigen::MatrixXf comSq = commonSquared(data);
@@ -45,7 +50,7 @@ private:
   Eigen::MatrixXf common;
 
 public:
-  auto predict(const Eigen::SparseMatrix<int8_t> data) -> Eigen::VectorXf {
+  auto predict(const Eigen::SparseMatrix<int8_t> &data) -> Eigen::VectorXf {
     assert(data.cols() == n);
     auto s_part = second_part(data).array() / 2;
     return w0 + (data.cast<float>() * w).array() + s_part;

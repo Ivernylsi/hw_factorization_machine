@@ -19,3 +19,11 @@ add_executable(fm_test
                )
 
 target_link_libraries(fm_test f_machine)
+
+add_executable(fm_dataset
+               test.cpp
+               )
+
+target_link_libraries(fm_dataset f_machine)
+
+add_executable(shuffle shuffler.cpp)
