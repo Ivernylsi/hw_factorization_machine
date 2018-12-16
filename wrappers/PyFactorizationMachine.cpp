@@ -13,7 +13,7 @@ namespace py = pybind11;
 PYBIND11_MODULE(py_fm, m) {
   py::class_<FactorizationMachine>(m, "Fmachine")
       .def(py::init<int, int>())
-      .def("train", &FactorizationMachine::train)
+      .def("train", &FactorizationMachine::train_py)
       .def("predict", &FactorizationMachine::predict)
       .def("RMSE", &FactorizationMachine::RMSE)
       .def("__repr__", [](const FactorizationMachine &f) {

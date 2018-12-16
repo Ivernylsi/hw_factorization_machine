@@ -15,7 +15,7 @@ add_subdirectory(dependencies/pybind11)
 add_subdirectory(wrappers)
 
 add_executable(fm_test
-               main.cpp
+               main_test.cpp
                )
 
 target_link_libraries(fm_test f_machine)
