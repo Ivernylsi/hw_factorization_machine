@@ -18,6 +18,7 @@ void reader(std::string fname) {
     if (file.eof())
       break;
   }
+  srand(time(0));
   std::random_shuffle(vec.begin(), vec.end());
   std::ofstream f(fname + "_shuffle");
   for(auto &i: vec) {

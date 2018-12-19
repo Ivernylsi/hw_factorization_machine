@@ -14,8 +14,8 @@ public:
     train(data.cast<int8_t>(), y.cast<float>(), max_iteration); 
   }
 
-  float train(const Eigen::SparseMatrix<int8_t> &data, const Eigen::VectorXf &y,
-             const int max_iteration = 1e+4);
+  void train(const Eigen::SparseMatrix<int8_t> &data, const Eigen::VectorXf &y,
+             const double factor = 1.0);
   float RMSE(const Eigen::VectorXf &y_pred, const Eigen::VectorXf &y);
 
   int getN() const { return n; }

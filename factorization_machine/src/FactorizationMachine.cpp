@@ -6,7 +6,7 @@
 
 namespace {
 float getUniform() {
-  std::normal_distribution<float> runif(-1.0, 1.0);
+  std::normal_distribution<float> runif(0.0, 1.0);
   std::mt19937 rng;
   float ans = runif(rng);
   return ans;
@@ -15,57 +15,47 @@ float getUniform() {
 FactorizationMachine::FactorizationMachine(int n, int k) : n(n), k(k) {
   auto a = [](const auto &) { return getUniform(); };
   v = Eigen::MatrixXf(n, k);
-  v.unaryExpr(a);
-  v /= 100;
+  v.setZero();
+  v = v.unaryExpr(a);
   w = Eigen::VectorXf(n);
-  w.unaryExpr(a);
+  w.setZero();
+  w = w.unaryExpr(a);
 
   w0 = getUniform();
 }
 
-float FactorizationMachine::train(const Eigen::SparseMatrix<int8_t> &data,
-                                  const Eigen::VectorXf &y,
-                                  const int max_iteration) {
+void FactorizationMachine::train(const Eigen::SparseMatrix<int8_t> &data,
+                                 const Eigen::VectorXf &y,
+                                 const double factor) {
 
   common.resize(data.rows(), k);
 
-  float train_rate = 0.1;
-  float v_train = 0.01;
+  float train_rate = 0.1 * factor;
+  float v_train = 0.01  * factor;
   Eigen::VectorXf y_pred = predict(data);
-  float rmse;
-  for (int i = 0; i < max_iteration; ++i) {
 
-    Eigen::VectorXf diff_y = (y_pred - y);
-    //  printf("diff is %f\n", diff_y.array().abs().sum());
+  Eigen::VectorXf diff_y = (y_pred - y);
 
-    w0 -= diff_y.mean() * train_rate;
+  w0 -= diff_y.mean() * train_rate;
 
-    auto t = diff_y.transpose() * data.cast<float>() / y.rows();
+  auto t = diff_y.transpose() * data.cast<float>() / y.rows();
 
-    w -= train_rate * t.transpose();
+  w -= train_rate * t.transpose();
 
-    for (int f = 0; f < k; ++f) {
-      Eigen::VectorXf a1 =
-          common.col(f).transpose() * data.cast<float>() / y.rows();
+  for (int f = 0; f < k; ++f) {
+    Eigen::VectorXf a1 =
+        common.col(f).transpose() * data.cast<float>() / y.rows();
 
-      Eigen::SparseMatrix<float> Vf =
-          (data.cast<float>() * v.col(f).asDiagonal()).transpose();
+    Eigen::SparseMatrix<float> Vf =
+        (data.cast<float>() * v.col(f).asDiagonal()).transpose();
 
-      Eigen::VectorXf a2 = Vf * Eigen::VectorXf::Ones(Vf.cols(), 1);
+    Eigen::VectorXf a2 = Vf * Eigen::VectorXf::Ones(Vf.cols(), 1);
 
-      v.col(f) -= (a1 - a2) * v_train / y.rows();
-    }
-
-    if (i % 1000 == 0)
-      v_train /= 2;
+    v.col(f) -= (a1 - a2) * v_train / y.rows();
   }
 
   y_pred = predict(data);
-
-  rmse = RMSE(y_pred, y);
-
-  std::cout << "RMSE : " << rmse << std::endl;
-  return rmse;
+  std::cout << "\t\trmse = " << RMSE(y_pred, y) << std::endl;
 }
 
 float FactorizationMachine::RMSE(const Eigen::VectorXf &y_pred,

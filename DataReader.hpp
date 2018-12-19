@@ -1,52 +1,35 @@
 #ifndef DATAREADER_HPP
-#define DATAREADER_HPP 
+#define DATAREADER_HPP
 
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
-#include <vector>
 #include <fstream>
 #include <string>
-using Trip = Eigen::Triplet<int>;
-using TripVec = std::vector<Trip, Eigen::aligned_allocator<Trip>>;
-using SparseMat = Eigen::SparseMatrix<int8_t>;
-using YVec = Eigen::VectorXf;
-using stdYVec = std::vector<float>;
+#include <vector>
+
+#include "data.hpp"
 
 struct data_reader {
   std::ifstream file;
 
-  data_reader(const std::string &s, int sk = 0,  int maxR=1e+6):maxR(maxR) {
-    file.open(s);
-    curr_line = 0;
-    if(sk !=0) skip(sk * maxR);
+  data_reader(const std::string &s) { file.open(s); }
+
+  void read(data &d, const int start) {
+    int u, f, r;
+    int i = 0;
+    const int step = 1e+6 * 10;
+    for (;;) {
+      file >> u >> f >> r;
+      if (i >= (start - 1) * step && i <= start * step)
+        d.test.emplace_back(u, f, r);
+      else
+        d.train.emplace_back(u, f, r);
+      if (file.eof())
+        break;
+      ++i;
+    }
+    file.close();
   }
-
-  void skip(int to_skip) {
-  int u, f, r;
-  int i;
-  for (i = 0; i < to_skip; ++i) 
-    file >> u >> f >> r;
-
-  }
-
-  int read(TripVec &vec, stdYVec &y) {
-  int u, f, r;
-  int i;
-  for (i = 0; i < maxR; ++i) {
-    file >> u >> f >> r;
-    vec.push_back(Trip(i, u, 1));
-    vec.push_back(Trip(i, f, 1));
-    y.push_back(r);
-
-    if (file.eof()) 
-      break;
-  }
-  return i;
-}
-
-
-  int curr_line;
-  int maxR;
 };
 
 #endif // DATAREADER_HPP
