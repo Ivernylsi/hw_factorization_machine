@@ -86,7 +86,9 @@ int main(int , char **argv) {
           std::chrono::duration_cast<std::chrono::milliseconds>(stop - start)
               .count();
       std::cout << "\t\tTime = " << time << std::endl;
+
     }
+
     factor *= 0.95;
     d.init();
     std::cout << "\tTrain rmse = " << train_rmse(fm, d) << std::endl;;

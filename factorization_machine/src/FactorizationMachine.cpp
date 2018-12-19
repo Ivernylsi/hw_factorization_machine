@@ -30,8 +30,8 @@ void FactorizationMachine::train(const Eigen::SparseMatrix<int8_t> &data,
 
   common.resize(data.rows(), k);
 
-  float train_rate = 0.1 * factor;
-  float v_train = 0.01  * factor;
+  float train_rate = 0.01 * factor;
+  float v_train = 0.001  * factor;
   Eigen::VectorXf y_pred = predict(data);
 
   Eigen::VectorXf diff_y = (y_pred - y);
